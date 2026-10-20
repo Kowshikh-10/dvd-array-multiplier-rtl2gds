@@ -10,6 +10,8 @@ Digital VLSI Design assignment: a 4-bit array multiplier (16 AND gates, 12 full 
 
 ### Synthesis
 
+The RTL design was synthesized using Yosys and mapped to the SKY130 standard-cell library.
+
 Command executed inside the IIC-OSIC-TOOLS container:
 
 ```bash
@@ -20,23 +22,11 @@ Generated files:
 - `synth/mult_array_netlist.v`
 - `synth/mult_array_stat.rpt`
 
-### Synthesis Results
-
-| Metric | Value |
-|---|---:|
-| Total number of cells | 68 |
-| Number of flip-flops | 16 |
-| Total cell area | 785.7536 µm² |
-| Flip-flop area | 400.384 µm² |
-| Flip-flop area (% of total) | 50.96% |
-| `dfrtp_1` count | 16 |
-| `nand2_1` count | 8 |
-| `and2_0` count | 6 |
-| `xnor2_1` count | 6 |
-
 ### Gate-Level Simulation
 
-Command executed from Windows PowerShell:
+The synthesized netlist was simulated using the SKY130 standard-cell models to verify that synthesis preserved the design's functionality.
+
+Command executed from the Windows terminal:
 
 ```powershell
 docker exec -w /foss/designs/dvd-array-multiplier-rtl2gds iic-osic-tools_xvnc_uid_1000 bash -lc 'iverilog -g2012 -DFUNCTIONAL -DUNIT_DELAY=\#1 -o gls tb/tb_mult.v /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v synth/mult_array_netlist.v && vvp gls'
@@ -45,3 +35,28 @@ docker exec -w /foss/designs/dvd-array-multiplier-rtl2gds iic-osic-tools_xvnc_ui
 Result:
 
 `PASS: 256 vectors checked, 0 errors`
+
+
+
+## Part C — Static Timing Analysis
+
+### Timing Analysis
+
+OpenSTA was used to perform static timing analysis on the synthesized netlist using the SKY130 typical timing corner (`tt_025C_1v80`).
+
+First, `set T 10.0` was used in `sta/sta.tcl`.
+
+Command executed from the Windows terminal:
+
+```powershell
+docker exec -w /foss/designs/dvd-array-multiplier-rtl2gds iic-osic-tools_xvnc_uid_1000 bash -lc "sta sta/sta.tcl"
+```
+
+OpenSTA reported a worst setup slack of 7.05 ns. The minimum clock period was calculated as 2.95 ns, and the maximum operating frequency was calculated as 338.98 MHz.
+
+Next, `set T 2.95` was used in `sta/sta.tcl`, and the same command was executed again.
+
+OpenSTA reported a worst setup slack of -0.004 ns.
+
+Generated file:
+- `sta/mult_array_timing.rpt`
